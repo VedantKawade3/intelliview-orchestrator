@@ -149,6 +149,7 @@ export default function SessionsPage() {
         </div>
 
         <StartInterviewForm disabled={!token} />
+      </div>
 
       <Card>
         <div className="mb-4 flex flex-wrap items-center gap-2">

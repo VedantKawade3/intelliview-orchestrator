@@ -10,6 +10,7 @@ Pipeline:
 """
 
 from __future__ import annotations
+from orchestrator.worker_registry import WorkerRegistry
 
 import json
 import logging
@@ -204,6 +205,7 @@ def process_interview_session(self, session_id):
     task_name = self.name
     start_time = time.perf_counter()
 
+    """
     Video and audio run in parallel via a Celery group; the evaluation
     and risk scoring stages run sequentially after both complete.
     """

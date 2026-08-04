@@ -216,29 +216,26 @@ export default function InterviewPage() {
             <VideoPlayer />
           </Card>
 
-          <Card title="Audio Visualization">
-            <div className="flex items-end gap-[2px] h-16">
-              {audioLevels.map((level, i) => (
-                <div
-                  key={i}
-                  className="flex-1 rounded-t transition-all duration-75"
-                  style={{
-                    height: `${Math.max(2, (level / maxLevel) * 100)}%`,
-                    backgroundColor:
-                      level / maxLevel > 0.7
-                        ? "#ef4444"
-                        : level / maxLevel > 0.4
-                          ? "#f59e0b"
-                          : "#6366f1",
-                    opacity: isLive ? 1 : 0.3,
-                  }}
+            <Card title="Live Camera Feed">
+              <div className="relative overflow-hidden rounded-md bg-black aspect-video flex flex-col justify-end">
+                <video
+                  ref={videoRef}
+                  autoPlay
+                  playsInline
+                  muted
+                  className={cn(
+                    "absolute inset-0 h-full w-full object-cover transition-opacity",
+                    videoEnabled ? "opacity-100" : "opacity-0"
+                  )}
                 />
+                
                 {!videoEnabled && (
                   <div className="absolute inset-0 flex flex-col items-center justify-center text-muted">
                     <VideoOff size={48} className="mb-3 opacity-30" />
                     <p className="text-sm">Camera is off</p>
                   </div>
                 )}
+                
                 {isPaused && videoEnabled && (
                   <div className="absolute inset-0 flex items-center justify-center bg-black/50">
                     <div className="flex items-center gap-2 rounded-md bg-bg-panel px-4 py-2 text-sm text-zinc-300">
@@ -247,14 +244,35 @@ export default function InterviewPage() {
                     </div>
                   </div>
                 )}
+                
                 {isLive && activeSession && (
                   <div className="absolute left-3 top-3 rounded-md bg-black/60 px-2 py-1 text-[10px] font-mono text-zinc-300">
                     {activeSession}
                   </div>
                 )}
+                
+                <div className="relative z-10 flex items-end gap-[2px] h-16 bg-gradient-to-t from-black/80 to-transparent px-2">
+                  {audioLevels.map((level, i) => (
+                    <div
+                      key={i}
+                      className="flex-1 rounded-t transition-all duration-75"
+                      style={{
+                        height: `${Math.max(2, (level / maxLevel) * 100)}%`,
+                        backgroundColor:
+                          level / maxLevel > 0.7
+                            ? "#ef4444"
+                            : level / maxLevel > 0.4
+                              ? "#f59e0b"
+                              : "#6366f1",
+                        opacity: isLive ? 1 : 0.3,
+                      }}
+                    />
+                  ))}
+                </div>
               </div>
+              
               {isLive && (
-                <div className="flex items-center gap-2 border-t border-border px-4 py-3">
+                <div className="mt-3 flex items-center gap-2 border-t border-border pt-3">
                   <button
                     onClick={toggleAudio}
                     className={cn(
@@ -274,40 +292,14 @@ export default function InterviewPage() {
                   </button>
                   <button
                     onClick={handleStop}
-                    className="ml-auto rounded-md bg-rose-500 px-3 py-1.5 text-xs font-medium text-white hover:bg-rose-600"
+                    className="ml-auto flex items-center gap-1 rounded-md bg-rose-500 px-3 py-1.5 text-xs font-medium text-white hover:bg-rose-600"
                   >
-                    <PhoneOff size={14} className="inline mr-1" />
+                    <PhoneOff size={14} />
                     End
                   </button>
                 </div>
               )}
             </Card>
-
-            <Card title="Audio Visualization">
-              <div className="flex items-end gap-[2px] h-16">
-                {audioLevels.map((level, i) => (
-                  <div
-                    key={i}
-                    className="flex-1 rounded-t transition-all duration-75"
-                    style={{
-                      height: `${Math.max(2, (level / maxLevel) * 100)}%`,
-                      backgroundColor:
-                        level / maxLevel > 0.7
-                          ? "#ef4444"
-                          : level / maxLevel > 0.4
-                            ? "#f59e0b"
-                            : "#6366f1",
-                      opacity: isLive ? 1 : 0.3,
-                    }}
-                  />
-                ))}
-              </div>
-              <div className="mt-2 flex items-center gap-2 text-xs text-muted">
-                <Volume2 size={12} />
-                <span>{isLive ? "Microphone active" : "Microphone inactive"}</span>
-              </div>
-            </Card>
-          </div>
 
           <div className="space-y-4">
             <Card title="Risk Score" description="Real-time risk assessment">
@@ -407,10 +399,8 @@ export default function InterviewPage() {
       </div>
     )}
   </Card>
-            
           </div>
         </div>
-      </div>
     </ErrorBoundary>
   );
 }

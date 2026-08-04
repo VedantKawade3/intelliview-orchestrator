@@ -33,7 +33,14 @@ class RateLimiterMiddleware(BaseHTTPMiddleware):
     exempt from limiting.
     """
 
-    EXEMPT_PATHS: frozenset[str] = frozenset({"/health", "/docs", "/openapi.json"})
+    EXEMPT_PATHS: frozenset[str] = frozenset({
+        "/health", 
+        "/docs", 
+        "/openapi.json",
+        "/register-worker",
+        "/deregister-worker",
+        "/worker/heartbeat",
+    })
 
     def __init__(
         self,

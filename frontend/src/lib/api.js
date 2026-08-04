@@ -72,12 +72,13 @@ const endpoints = {
   systemHealth: () => api.get("/system-health"),
   workerHealth: () => api.get("/worker-health"),
   schedulingStatus: () => api.get("/scheduling-status"),
-  switchStrategy: (strategy) => api.post("/switch-strategy", strategy),
+  switchStrategy: (strategy) => api.post(`/switch-strategy?strategy=${strategy}`),
   faultStatistics: () => api.get("/fault-statistics"),
   failureLog: (limit = 50) => api.get(`/failure-log?limit=${limit}`),
   deadLetterQueue: (limit = 50) => api.get(`/dead-letter-queue?limit=${limit}`),
 retrySession: (session_id) => api.post(`/retry-session/${session_id}`),
 detectFailures: () => api.post("/detect-failures"),
+clearCache: () => api.delete("/clear-cache"),
 reportWebVitals: (payload) => api.post("/metrics/web-vitals", payload)
 };
 export {

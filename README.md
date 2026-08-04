@@ -1,90 +1,75 @@
-# Risk Weight Configuration API
-**Task:** Expose API endpoints allowing recruiters to customize risk weights per job position
+# IntelliView Orchestrator
 
----
+The **IntelliView Orchestrator** is an AI-powered distributed interview orchestration framework. It manages real-time, multi-modal AI interviews using a robust architecture designed for high availability, fault tolerance, and comprehensive analytics.
 
-## Project Structure
+## Project Architecture
 
-```
-risk-weights/
-├── src/
-│   ├── main.py      ← FastAPI app entry point (seeded with example configs)
-│   ├── router.py    ← All CRUD endpoints
-│   ├── models.py    ← Pydantic schemas & validation
-│   └── store.py     ← In-memory store (drop-in replaceable with DB)
-└── tests/
-    └── test_api.py  ← 26 unit tests
-```
+- **FastAPI**: The core backend API framework handling routing, validation, and orchestration logic.
+- **Next.js 14**: A real-time frontend dashboard for HR personnel to monitor and review interviews.
+- **PostgreSQL**: Primary persistent data store for session data, configurations, and analytical reporting.
+- **Redis**: In-memory caching and message broker for the task queue.
+- **Celery**: Asynchronous worker pool handling heavy AI processing tasks (audio transcription, evaluation, hallucination detection).
+- **CV Service**: Dedicated computer vision microservice.
+- **Monitoring**: Built-in integration with Prometheus, Grafana, and Jaeger for tracing and metric tracking.
 
----
+## Getting Started
 
-## Setup & Run
+### Prerequisites
 
-Running `docker compose up -d --build` automatically builds and starts the entire stack, including both the FastAPI backend and the Next.js frontend.
+Ensure you have Docker and Docker Compose installed on your system.
+For local native development, you will need Python 3.10+ and Node.js 20+.
 
-```bash
-pip install fastapi uvicorn pydantic pytest httpx
+### Running with Docker Compose (Recommended)
 
-# Start server
-cd src && python3 main.py
-# → http://localhost:8000
-# → http://localhost:8000/docs  (Swagger UI)
-```
-
----
-
-## API Endpoints
-
-| Method | Endpoint | Description |
-|--------|----------|-------------|
-| `POST` | `/risk-configs/` | Create config for a job position |
-| `GET` | `/risk-configs/` | List all configs |
-| `GET` | `/risk-configs/{id}` | Get config by ID |
-| `GET` | `/risk-configs/by-position/{name}` | Get config by job position name |
-| `PUT` | `/risk-configs/{id}` | Update a config |
-| `DELETE` | `/risk-configs/{id}` | Delete a config |
-| `GET` | `/risk-engine/weights/{job_position}` | Used by risk engine — always returns weights (fallback to defaults) |
-
----
-
-## Example Usage
+The easiest way to spin up the entire application stack is via Docker Compose. This brings up the API, Frontend, PostgreSQL, Redis, Celery Workers, Flower (task monitoring), and observability tools.
 
 ```bash
-# Create a config for Software Engineer
-curl -X POST http://localhost:8000/risk-configs/ \
-  -H "Content-Type: application/json" \
-  -d '{
-    "job_position": "Software Engineer",
-    "weights": {
-      "tab_switching": 3.0,
-      "browser_activity": 3.0,
-      "audio_interruptions": 1.0,
-      "multiple_persons": 2.0,
-      "candidate_absence": 2.0,
-      "gaze_deviation": 1.5,
-      "background_noise": 0.5
-    }
-  }'
-
-# Risk engine fetches weights (never breaks even if no config exists)
-curl http://localhost:8000/risk-engine/weights/Software%20Engineer
+# Build and start the complete environment in detached mode
+docker-compose up -d --build
 ```
 
----
+### Useful Endpoints
 
-## Validation Rules
+Once the stack is running, you can access the following services locally:
 
-- `job_position` — required, 1–100 chars, unique (case-insensitive)
-- All weights — must be `>= 0`
-- At least one weight must be `> 0`
-- Duplicate job positions → `409 Conflict`
-- Invalid/missing config for risk engine → falls back to **default weights (all 1.0)**
+- **Frontend HR Dashboard**: [http://localhost:3000](http://localhost:3000)
+- **FastAPI Backend Swagger Docs**: [http://localhost:8000/docs](http://localhost:8000/docs)
+- **Flower (Celery Monitor)**: [http://localhost:5555](http://localhost:5555)
+- **Grafana (Dashboards)**: [http://localhost:3001](http://localhost:3001)
+- **Jaeger (Tracing)**: [http://localhost:16686](http://localhost:16686)
+- **Prometheus (Metrics)**: [http://localhost:9090](http://localhost:9090)
 
----
+## Development Setup
 
-## Run Tests
+### Backend
+
+1. Navigate to the root directory.
+2. Install Python dependencies: `pip install -r requirements.txt`
+3. Start the FastAPI server natively: `uvicorn orchestrator.main:app --host 0.0.0.0 --port 8000`
+
+### Frontend
+
+1. Navigate to the frontend directory: `cd frontend`
+2. Install Node dependencies: `npm ci`
+3. Run the development server: `npm run dev`
+
+## Running Tests
+
+We use `pytest` for backend testing and `vitest` for the frontend.
 
 ```bash
-PYTHONPATH=src pytest tests/test_api.py -v
-# 26 passed
+# Run backend tests
+pytest tests/ -v -m "not e2e"
+
+# Run frontend tests
+cd frontend
+npm run test
+```
+
+## Troubleshooting & Maintenance
+
+If you encounter issues with database schema drift, ensure Alembic migrations are up to date.
+To bring down the entire stack and wipe volumes (destructive action):
+```bash
+docker-compose down -v
 ```

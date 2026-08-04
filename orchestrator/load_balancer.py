@@ -54,6 +54,11 @@ class LoadBalancer:
         self._wrr_current_weights: dict[str, int] = {}
         self._wrr_lock = Lock()
 
+        self._worker_cache = None
+        self._cache_timestamp = 0.0
+        self._cache_ttl = 2.0
+        self._registry_lookup_count = 0
+
         logger.info(f"Load Balancer initialized with strategy: {strategy.value}")
 
     def select_worker(self) -> dict[str, Any] | None:
@@ -243,7 +248,7 @@ class LoadBalancer:
         )
         return best
 
-    def get_best_worker_for_priority(self, priority: str) -> dict[str, Any] | None:
+    def _get_cached_workers(self) -> list[dict[str, Any]]:
         """
         Return cached workers if cache is still valid.
         """
@@ -282,23 +287,22 @@ class LoadBalancer:
         """
         available = self._get_cached_workers()
 
-if not available:
-    return None
-
-available.sort(
-    key=lambda w: (
-        w["active_tasks"] /
-        self.worker_registry.get_worker_weight(w)
-    )
-)
-
+        if not available:
+            return None
+        
+        available.sort(
+            key=lambda w: (
+                w["active_tasks"] /
+                self.worker_registry.get_worker_weight(w)
+            )
+        )
 
         # Normalize priority to lowercase so "High"/"high"/"HIGH" all work
         priority = priority.lower()
 
         # ── Step 1: Filter candidate pool by priority ─────────────────────────
         if priority == "high":
-        return available[0]
+            return available[0]
 
         # For medium priority, select from least loaded
         if priority == "medium":

@@ -20,6 +20,10 @@ def get_current_user(
     - Legacy X-API-Token
     """
 
+    # Legacy API token authentication (either via header or Bearer token)
+    if x_api_token == API_TOKEN or token == API_TOKEN:
+        return {"role": "admin"}
+
     # JWT authentication
     if token:
         payload = verify_access_token(token)
@@ -29,10 +33,6 @@ def get_current_user(
                 detail="Invalid or expired token",
             )
         return payload
-
-    # Legacy API token authentication
-    if x_api_token == API_TOKEN:
-        return {"role": "admin"}
 
     raise HTTPException(
         status_code=status.HTTP_401_UNAUTHORIZED,

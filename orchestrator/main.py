@@ -55,6 +55,7 @@ from orchestrator.question_bank import QuestionBank
 from orchestrator.rate_limiter import RateLimiterMiddleware
 from orchestrator.redis_client import get_redis_client
 from orchestrator.request_validation import RequestValidationMiddleware
+from orchestrator.middleware.capacity_guard import CapacityGuardMiddleware
 from orchestrator.retry_manager import RetryManager, RetryStrategy
 from orchestrator.scheduler import Scheduler
 from orchestrator.session_manager import SessionManager

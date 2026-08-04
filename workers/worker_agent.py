@@ -47,6 +47,7 @@ class WorkerAgent:
             os.getenv("MAX_TASKS_BEFORE_RESTART", "100")
         )  # restart limit
         self._restart_requested = False  # restart flag
+        self.is_draining = False
 
         self._stop = False
         self._headers = {
@@ -115,6 +116,11 @@ class WorkerAgent:
         except Exception as exc:
             logger.debug("Deregister failed: %s", exc)
 
+    def enter_drain_mode(self) -> None:
+        """Put the agent into drain mode, stopping new work routing."""
+        self.is_draining = True
+        logger.info("WorkerAgent entered drain mode")
+
     def heartbeat_loop(self) -> None:
         while not self._stop:
             # The orchestrator's heartbeat endpoint doesn't accept a
@@ -124,7 +130,7 @@ class WorkerAgent:
             # to stop routing new work here, without needing any
             # orchestrator-side change.
             reported_active_tasks = (
-                self.capacity if self.draining else self.active_tasks
+                self.capacity if self.is_draining else self.active_tasks
             )
 
             self._post(
@@ -134,6 +140,7 @@ class WorkerAgent:
                     "active_tasks": reported_active_tasks,
                 },
             )
+            time.sleep(self.heartbeat_interval)
 
     def _handle_shutdown(self, signum, frame) -> None:
         logger.info(

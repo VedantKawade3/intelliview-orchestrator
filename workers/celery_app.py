@@ -9,6 +9,7 @@ from kombu import Queue
 
 from config import REDIS_URL
 from metrics.prometheus_metrics import TASKS_PERMANENTLY_FAILED
+from opentelemetry.instrumentation.celery import CeleryInstrumentor
 
 celery_app = Celery("interview_tasks", broker=REDIS_URL, backend=REDIS_URL)
 CeleryInstrumentor().instrument()
@@ -116,7 +117,7 @@ def _on_task_failure(sender, task_id, exception, args, kwargs, traceback, einfo,
         )
 
         # TODO: enable notification task when implemented
-        # send_mock_email_alert.delay(session_id)
+        send_mock_email_alert.delay(session_id)
     except Exception as exc:
         # Don't let a signal handler crash the worker.
         import logging

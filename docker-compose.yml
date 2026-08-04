@@ -246,7 +246,7 @@ services:
       - ai-interview-network
  
     healthcheck:
-      test: ["CMD", "wget", "--spider", "-q", "http://localhost:3000/api/health"]
+      test: ["CMD", "wget", "--spider", "-q", "http://localhost:14269/"]
       interval: 15s
       timeout: 5s
       start_period: 30s
@@ -273,10 +273,10 @@ services:
     networks:
       - ai-interview-network
     healthcheck:
-      test: ["CMD", "wget", "--spider", "-q", "http://127.0.0.1:3000/"]
+      test: ["CMD-SHELL", "node -e \"require('http').get('http://127.0.0.1:3000/', (r) => process.exit(r.statusCode < 500 ? 0 : 1)).on('error', () => process.exit(1))\""]
       interval: 15s
-      timeout: 5s
-      start_period: 30s
+      timeout: 10s
+      start_period: 60s
       retries: 3
     deploy:
       resources:
@@ -301,6 +301,12 @@ services:
     working_dir: /app/Digest-Notifications
     command: python src/digest.py --serve --port 8080 --host 0.0.0.0
     restart: unless-stopped
+    healthcheck:
+      test: ["CMD", "python", "-c", "import urllib.request; urllib.request.urlopen('http://localhost:8080', timeout=5)"]
+      interval: 30s
+      timeout: 5s
+      start_period: 15s
+      retries: 3
     deploy:
       resources:
         limits:

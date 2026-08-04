@@ -187,8 +187,13 @@ def create_worker_routes(worker_registry, load_balancer, scheduler, session_trac
             total_active = stats.get("total_active_tasks", 0)
             utilization = (total_active / total_capacity * 100) if total_capacity > 0 else 0
 
+            unhealthy = worker_registry.detect_unhealthy_workers()
+            healthy_count = stats.get("total_workers", 0) - len(unhealthy)
+
             return {
                 "total_workers": stats.get("total_workers", 0),
+                "healthy_workers": healthy_count,
+                "unhealthy_workers": len(unhealthy),
                 "total_capacity": total_capacity,
                 "total_active_tasks": total_active,
                 "system_utilization_percent": round(utilization, 2),

@@ -13,6 +13,7 @@ Responsibilities:
 - Dependency status tracking with latency measurements
 """
 
+from metrics.prometheus_metrics import QUEUE_DEPTH
 import json
 import logging
 import time
@@ -20,6 +21,7 @@ from datetime import datetime, timezone
 from typing import Any
 
 from orchestrator.redis_client import get_redis_client
+from metrics.prometheus_metrics import POSTGRES_HEALTH, REDIS_HEALTH
 
 logger = logging.getLogger(__name__)
 
@@ -117,7 +119,7 @@ class HealthMonitor:
     # Readiness probe (Kubernetes-style)
     # ------------------------------------------------------------------
 
-    def readiness_check(self) -> dict[str, Any]:
+    async def readiness_check(self) -> dict[str, Any]:
         """Return true readiness â€” all critical dependencies must be up.
 
         Use this for k8s readinessProbe: the service only receives

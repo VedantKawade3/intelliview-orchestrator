@@ -154,13 +154,11 @@ class WorkerRegistry:
                         if isinstance(v, (int, float))
                         and k
                         in {
-                            in {
-                             "capacity",
-                             "active_tasks",
-                             "total_tasks_processed",
-                             "failed_tasks",
-                             "failure_count",
-}
+                            "capacity",
+                            "active_tasks",
+                            "total_tasks_processed",
+                            "failed_tasks",
+                            "failure_count",
                         }
                         else str(v)
                     )
@@ -365,83 +363,81 @@ class WorkerRegistry:
             logger.error(f"Error decrementing active tasks: {e!s}")
             return False
         
-        def record_failure(self, worker_id: str) -> None:
-    """
-    Record a failed task and apply a temporary penalty.
-    """
-    with self.lock:
-        worker = self.local_workers.get(worker_id)
-        if not worker:
-            return
+    def record_failure(self, worker_id: str) -> None:
+        """
+        Record a failed task and apply a temporary penalty.
+        """
+        with self.lock:
+            worker = self.local_workers.get(worker_id)
+            if not worker:
+                return
 
-        worker["failed_tasks"] += 1
-        worker["failure_count"] += 1
+            worker["failed_tasks"] += 1
+            worker["failure_count"] += 1
 
-        # Reduce scheduling weight
-        worker["penalty_weight"] = max(
-            0.2,
-            worker["penalty_weight"] - 0.2
-        )
+            # Reduce scheduling weight
+            worker["penalty_weight"] = max(
+                0.2,
+                worker["penalty_weight"] - 0.2
+            )
 
-        # Penalty lasts for 60 seconds
-        worker["penalty_until"] = (
-            datetime.now(timezone.utc) + timedelta(seconds=60)
-        ).isoformat()
+            # Penalty lasts for 60 seconds
+            worker["penalty_until"] = (
+                datetime.now(timezone.utc) + timedelta(seconds=60)
+            ).isoformat()
 
-    if self.redis_client:
-        key = f"{self.WORKER_KEY_PREFIX}{worker_id}"
-        self.redis_client.hset(key, mapping={
-            "failed_tasks": worker["failed_tasks"],
-            "failure_count": worker["failure_count"],
-            "penalty_weight": worker["penalty_weight"],
-            "penalty_until": worker["penalty_until"],
-        })
+        if self.redis_client:
+            key = f"{self.WORKER_KEY_PREFIX}{worker_id}"
+            self.redis_client.hset(key, mapping={
+                "failed_tasks": worker["failed_tasks"],
+                "failure_count": worker["failure_count"],
+                "penalty_weight": worker["penalty_weight"],
+                "penalty_until": worker["penalty_until"],
+            })
 
+    def record_success(self, worker_id: str) -> None:
+        """
+        Reset penalty after successful execution.
+        """
+        with self.lock:
+            worker = self.local_workers.get(worker_id)
+            if not worker:
+                return
 
-def record_success(self, worker_id: str) -> None:
-    """
-    Reset penalty after successful execution.
-    """
-    with self.lock:
-        worker = self.local_workers.get(worker_id)
-        if not worker:
-            return
-
-        worker["failure_count"] = 0
-        worker["penalty_weight"] = 1.0
-        worker["penalty_until"] = None
-
-    if self.redis_client:
-        key = f"{self.WORKER_KEY_PREFIX}{worker_id}"
-        self.redis_client.hset(key, mapping={
-            "failure_count": 0,
-            "penalty_weight": 1.0,
-            "penalty_until": "",
-        })
-
-
-def get_worker_weight(self, worker: dict[str, Any]) -> float:
-    """
-    Return effective scheduling weight.
-    Penalized workers receive a lower weight.
-    """
-    penalty_until = worker.get("penalty_until")
-
-    if penalty_until:
-        try:
-            expiry = datetime.fromisoformat(penalty_until)
-
-            if expiry > datetime.now(timezone.utc):
-                return worker["penalty_weight"]
-
-            # Penalty expired
+            worker["failure_count"] = 0
             worker["penalty_weight"] = 1.0
             worker["penalty_until"] = None
 
-        except Exception:
-            pass
+        if self.redis_client:
+            key = f"{self.WORKER_KEY_PREFIX}{worker_id}"
+            self.redis_client.hset(key, mapping={
+                "failure_count": 0,
+                "penalty_weight": 1.0,
+                "penalty_until": "",
+            })
 
-    return 1.0
+    def get_worker_weight(self, worker: dict[str, Any]) -> float:
+        """
+        Return effective scheduling weight.
+        Penalized workers receive a lower weight.
+        """
+        penalty_until = worker.get("penalty_until")
+
+        if penalty_until:
+            try:
+                expiry = datetime.fromisoformat(penalty_until)
+
+                if expiry > datetime.now(timezone.utc):
+                    return worker["penalty_weight"]
+
+                # Penalty expired
+                worker["penalty_weight"] = 1.0
+                worker["penalty_until"] = None
+
+            except Exception:
+                pass
+
+        return 1.0
 
 
     def get_worker(self, worker_id: str) -> dict[str, Any] | None:
@@ -572,67 +568,6 @@ def get_worker_weight(self, worker: dict[str, Any]) -> float:
             self._trigger_sync_broadcast(wid)
 
         return unhealthy
-    
-    def record_worker_failure(self, worker_id: str):
-    worker = self.local_workers.get(worker_id)
-
-    if not worker:
-        return
-
-    worker["failure_count"] += 1
-
-    if worker["failure_count"] >= 3:
-        worker["penalty_weight"] = 0.5
-        worker["penalty_until"] = (
-            datetime.now(timezone.utc) + timedelta(minutes=5)
-        ).isoformat()
-
-        def clear_penalty(self, worker_id: str):
-
-    worker = self.local_workers.get(worker_id)
-
-    if not worker:
-        return
-
-    worker["failure_count"] = 0
-    worker["penalty_weight"] = 1.0
-    worker["penalty_until"] = None
-
-    def get_worker_weight(self, worker):
-
-    penalty_until = worker.get("penalty_until")
-
-    if penalty_until:
-
-        if datetime.now(timezone.utc) > datetime.fromisoformat(penalty_until):
-
-            worker["penalty_weight"] = 1.0
-            worker["failure_count"] = 0
-            worker["penalty_until"] = None
-
-    return worker.get("penalty_weight", 1.0)
-
-
-def record_failure(self, worker_id: str):
-    worker = self.local_workers.get(worker_id)
-    if not worker:
-        return
-
-    worker["failure_count"] += 1
-
-    if worker["failure_count"] >= 3:
-        worker["penalty_weight"] = 0.5
-
-    def record_success(self, worker_id: str):
-    worker = self.local_workers.get(worker_id)
-    if not worker:
-        return
-
-    worker["failure_count"] = 0
-    worker["penalty_weight"] = 1.0
-
-    def get_worker_weight(self, worker):
-    return worker.get("penalty_weight", 1.0)
 
 
     def deregister_worker(self, worker_id: str) -> bool:

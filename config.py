@@ -9,8 +9,10 @@ import json
 import os
 from functools import lru_cache
 
-from pydantic import Field
+from pydantic import Field, field_validator
 from pydantic_settings import BaseSettings, SettingsConfigDict
+
+
 @lru_cache(maxsize=1)
 def get_aws_secrets(secret_name: str, region_name: str = "us-east-1") -> dict:
     """Fetches and caches JSON secrets from AWS Secrets Manager."""
